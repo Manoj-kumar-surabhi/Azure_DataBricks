@@ -35,17 +35,61 @@ circuits_df.printSchema()
 
 # COMMAND ----------
 
-display(circuits_df)
+# MAGIC %md 
+# MAGIC ###Selecting the columns we need
+# MAGIC # this type below have the ability to use functions on the table
 
 # COMMAND ----------
 
-display(dbutils.fs.mounts())
+from pyspark.sql.functions import col 
+
+# COMMAND ----------
+
+circuits_selected_df = circuits_df.select(col("circuitId"), col("circuitRef"), col("name"), col("location"), col("country"), col("lat"), col("lng"), col("alt"))
+
+# COMMAND ----------
+
+display(circuits_selected_df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### step 3 Rename the Columns  
+
+# COMMAND ----------
+
+circuits_renamed_df = circuits_selected_df.withColumnRenamed("circuitId", "circuit_id").withColumnRenamed("circuitRef", "circuit_ref").withColumnRenamed("lat", "latitude").withColumnRenamed("lng", "longitude").withColumnRenamed("alt", "altitude")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #step 4 Add a column
+# MAGIC
+
+# COMMAND ----------
+
+from pyspark.sql.functions import current_timestamp
+
+
+# COMMAND ----------
+
+circuits_final_df = circuits_renamed_df.withColumn("ingestion_date", current_timestamp())
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC # write to data lake storage
+
+# COMMAND ----------
+
+circuits_final_df.write.parquet("/mnt/formula1/processed/circuits")
 
 # COMMAND ----------
 
 # MAGIC %fs
-# MAGIC ls /mnt/formula1
+# MAGIC ls /mnt/formula1/processed/circuits
 
 # COMMAND ----------
 
-circuits_df.printSchema()
+display(spark.read.parquet("/mnt/formula1/processed/circuits"))
